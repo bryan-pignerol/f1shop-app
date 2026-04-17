@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "projet-app",
-    "slug": "projet-app",
+    "name": "f1shop-app",
+    "slug": "f1shop-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
