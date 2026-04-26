@@ -34,4 +34,4 @@ const Purchase = sequelize.define('Purchase', {
   timestamps: false, // dÃ©sactiver createdAt / updatedAt si ta table n'en a pas
 });
 
-module.exports = Product;
+module.exports = Purchase;

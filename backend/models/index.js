@@ -1,11 +1,11 @@
 const sequelize = require('../config/db');
 
-const Client = require('./clients.model');
-const Order = require('./orders.model');
-const Product = require('./products.model');
-const Category = require('./categories.model');
-const Purchase = require('./purchases.model');
-const OrderProduct = require('./orderProducts.model');
+const Client = require('./Client');
+const Order = require('./Order');
+const Product = require('./Product');
+const Category = require('./Category');
+const Purchase = require('./Purchase');
+const OrderProduct = require('./OrderProduct');
 
 Client.hasMany(Order, { foreignKey: 'client_id' });
 Order.belongsTo(Client, { foreignKey: 'client_id' });
