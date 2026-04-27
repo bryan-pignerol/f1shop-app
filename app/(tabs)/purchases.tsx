@@ -1,98 +1,236 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  Button,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  SafeAreaView,
+} from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const API_URL = 'http://172.20.10.7:3001/api/purchases';
 
-export default function HomeScreen() {
+export default function PurchasesPage() {
+  const [purchases, setPurchases] = useState<any[]>([]);
+  const [form, setForm] = useState({
+    product_id: '',
+    quantity: '',
+    purchase_price: '',
+    date: new Date().toISOString().split('T')[0],
+  });
+
+  const loadPurchases = () => {
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => setPurchases(data))
+      .catch(() => Alert.alert('Erreur', 'Impossible de charger les achats'));
+  };
+
+  useEffect(() => {
+    loadPurchases();
+  }, []);
+
+  const submitPurchase = () => {
+    if (!form.product_id || !form.quantity || !form.purchase_price) {
+      Alert.alert('Erreur', 'Tous les champs sont obligatoires');
+      return;
+    }
+
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({
+        product_id: parseInt(form.product_id),
+        quantity: parseInt(form.quantity),
+        purchase_price: parseFloat(form.purchase_price),
+        date: form.date
+      }),
+    })
+      .then(res => res.json())
+      .then(newPurchase => {
+        setPurchases(liste => [newPurchase, ...liste]);
+        setForm({ 
+          product_id: '', 
+          quantity: '', 
+          purchase_price: '', 
+          date: new Date().toISOString().split('T')[0] 
+        });
+        Alert.alert('Succès', 'Achat enregistré et stock mis à jour');
+      })
+      .catch(() => Alert.alert('Erreur', 'Erreur lors de l’ajout de l’achat'));
+  };
+
+  const supprimerPurchase = (id: number) => {
+    fetch(`${API_URL}/${id}`, { 
+      method: 'DELETE' 
+    })
+      .then(res => {
+        if (res.status === 204 || res.status === 200) {
+          setPurchases(liste => liste.filter(p => p.id !== id));
+        } else {
+          Alert.alert('Erreur', 'Impossible de supprimer cet achat');
+        }
+      })
+      .catch(() => Alert.alert('Erreur', 'Erreur lors de la suppression'));
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Bienvenue sur F1 Shop !</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Approvisionnement</Text>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <View style={styles.formCard}>
+          <TextInput
+            placeholder="ID du Produit"
+            value={form.product_id}
+            onChangeText={t => setForm({ ...form, product_id: t })}
+            keyboardType="numeric"
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Quantité"
+            value={form.quantity}
+            onChangeText={t => setForm({ ...form, quantity: t })}
+            keyboardType="numeric"
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Prix d'achat unitaire"
+            value={form.purchase_price}
+            onChangeText={t => setForm({ ...form, purchase_price: t })}
+            keyboardType="numeric"
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Date (AAAA-MM-JJ)"
+            value={form.date}
+            onChangeText={t => setForm({ ...form, date: t })}
+            style={styles.input}
+          />
+
+          <Button
+            title="Enregistrer l'achat"
+            onPress={submitPurchase}
+            color="#28a745"
+          />
+        </View>
+
+        <FlatList
+          data={purchases}
+          keyExtractor={item => item.id.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.purchaseCard}>
+              <View style={styles.purchaseInfo}>
+                <Text style={styles.productRef}>
+                  Produit ID: {item.product_id}
+                </Text>
+                <Text style={styles.details}>
+                  Quantité: {item.quantity} | Prix: {item.purchase_price} €
+                </Text>
+                <Text style={styles.dateText}>
+                  Date: {item.date ? item.date.split('T')[0] : ''}
+                </Text>
+              </View>
+
+              <TouchableOpacity 
+                onPress={() => supprimerPurchase(item.id)}
+                style={styles.deleteBtn}
+              >
+                <Text style={styles.deleteText}>Supprimer</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Aucun historique d'achat.</Text>
+          }
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f0f2f5',
+  },
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#1a1a1a',
+  },
+  formCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 6,
+    backgroundColor: '#fff',
+  },
+  purchaseCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    borderLeftWidth: 5,
+    borderLeftColor: '#28a745',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  purchaseInfo: {
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  productRef: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  details: {
+    fontSize: 14,
+    color: '#495057',
+    marginTop: 2,
+  },
+  dateText: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginTop: 2,
+  },
+  deleteBtn: {
+    padding: 5,
+  },
+  deleteText: {
+    color: '#dc3545',
+    fontWeight: '600',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 30,
+    color: '#999',
   },
 });

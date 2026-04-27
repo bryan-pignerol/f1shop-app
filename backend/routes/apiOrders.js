@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Order, Client } = require('../models');
+const { Order, Client, Product } = require('../models');
 
 // ---------------------
 // Ajouter une Commande
@@ -28,10 +28,17 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const orders = await Order.findAll({
-      include: [{
-        model: Client,
-        attributes: ['id', 'name', 'email']
-      }]
+      include: [
+        {
+          model: Client,
+          attributes: ['id', 'name', 'email']
+        },
+        // AJOUT : On inclut les produits pour l'historique
+        {
+          model: Product,
+          through: { attributes: ['quantity'] }
+        }
+      ]
     });
     res.json(orders);
   } catch (err) {
@@ -40,7 +47,7 @@ router.get('/', async (req, res) => {
 });
 
 // ---------------------
-// Obtenir une Commande par ID
+// Obtenir une Commande par ID (Détail Facture)
 // ---------------------
 router.get('/:id', async (req, res) => {
   try {
@@ -48,7 +55,14 @@ router.get('/:id', async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ message: 'ID invalide' });
 
     const order = await Order.findByPk(id, {
-      include: [Client]
+      include: [
+        { model: Client },
+        // AJOUT : Indispensable pour afficher les F1 sur la facture
+        { 
+          model: Product,
+          through: { attributes: ['quantity'] }
+        }
+      ]
     });
 
     if (!order) return res.status(404).json({ message: 'Commande non trouvée' });
