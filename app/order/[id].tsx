@@ -121,10 +121,6 @@ export default function OrderInvoicePage() {
             <Text style={styles.totalLabel}>TOTAL À PAYER</Text>
             <Text style={styles.totalAmount}>{order?.total} €</Text>
           </View>
-
-          <Text style={styles.footerNote}>
-            Document généré par le système de gestion F1 Shop.
-          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
